@@ -48,6 +48,12 @@ GIT_INIT_DEVELOP=1 \
 | `DELETE_GIT_DIR`   | no       | `1` deletes the template's `.git` directory                                             | `0`, keep it                               |
 | `GIT_INIT_DEVELOP` | no       | `1` runs `git init --initial-branch develop`; needs `DELETE_GIT_DIR=1` if `.git` exists | `0`, don't                                 |
 
+> **Started with "Use this template"?** Leave `DELETE_GIT_DIR` and
+> `GIT_INIT_DEVELOP` unset. GitHub already gave you a fresh repo with its own
+> history and remote, and `DELETE_GIT_DIR=1` would delete them. Those two
+> flags are for a plain `git clone` of this template, where `.git` still holds
+> the template's history.
+
 When it finishes, the script prints the remaining steps: commit the project
 and tag it `v0.0.1`.
 
