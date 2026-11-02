@@ -8,13 +8,16 @@ APP_NAME="${APP_NAME:-{{APP_NAME}}}"
 # Read from go.mod with awk because the CI runner has no Go toolchain installed.
 MODULE_NAME="${MODULE_NAME:-$(awk '/^module /{print $2}' "${PROJ_ROOT}/src/go.mod")}"
 
-IMAGE_NAME="${IMAGE_NAME:-${APP_NAME}_docker_image}"
+# Docker image and compose project names must be lowercase, even when APP_NAME isn't.
+DOCKER_NAME="$(printf '%s' "${APP_NAME}" | tr '[:upper:]' '[:lower:]')"
+
+IMAGE_NAME="${IMAGE_NAME:-${DOCKER_NAME}_docker_image}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 OUTPUT_DIR="${OUTPUT_DIR:-${PROJ_ROOT}/.bin}"
 
 COMPOSE_FILE="${PROJ_ROOT}/tests/docker-compose.yaml"
 # The PID suffix keeps parallel runs on one machine from sharing compose resources.
-COMPOSE_PROJECT="${COMPOSE_PROJECT:-${APP_NAME}-black-box-$$}"
+COMPOSE_PROJECT="${COMPOSE_PROJECT:-${DOCKER_NAME}-black-box-$$}"
 
 BUILD_VER="${BUILD_VER:-$(git -C "${PROJ_ROOT}" describe --tags --abbrev=0 2>/dev/null || echo 'dev')}"
 BUILD_DATE="${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
