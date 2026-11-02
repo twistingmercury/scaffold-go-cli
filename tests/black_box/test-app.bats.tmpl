@@ -12,3 +12,19 @@ TARGET_BINARY="${TARGET_BINARY:-${BATS_TEST_DIRNAME}/../../.bin/local/{{APP_NAME
     assert_success
     assert_output "This is an empty Go project. Replace this with your app."
 }
+
+@test "{{APP_NAME}} with --version - prints the build's version details" {
+    run "${TARGET_BINARY}" --version
+
+    assert_success
+    assert_line --regexp '^{{APP_NAME}} version: .+$'
+    assert_line --regexp '^commit: .+$'
+}
+
+@test "{{APP_NAME}} with -h - prints usage listing the flags" {
+    run "${TARGET_BINARY}" -h
+
+    assert_success
+    assert_line "Usage: {{APP_NAME}} [flags]"
+    assert_output --partial "--version"
+}

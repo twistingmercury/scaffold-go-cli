@@ -52,9 +52,10 @@ Whatever language you write them in, black-box tests stick to these:
 ## The example in this folder
 
 `tests/black_box/` uses [bats](https://github.com/bats-core/bats-core), which
-is a test framework for shell scripts. There's one test in
-`test-app.bats`. It runs the binary and checks that it exits cleanly and
-prints the empty-project message:
+is a test framework for shell scripts. The tests in `test-app.bats` run the
+binary with no flags, with `--version`, and with `-h`, and check what comes
+out. Here's the first one, which checks that the app exits cleanly and prints
+the empty-project message:
 
 ```bash
 @test "{{APP_NAME}} run with no config - prints the empty project message" {

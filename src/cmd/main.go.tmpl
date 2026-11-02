@@ -3,11 +3,26 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+
+	flag "github.com/spf13/pflag"
 
 	"{{GO_MODULE}}/internal/config"
+	"{{GO_MODULE}}/internal/version"
+)
+
+var (
+	versionFlag = flag.BoolP("version", "v", false, "Display the application version")
+	helpFlag    = flag.BoolP("help", "h", false, "Shows help information")
 )
 
 func main() {
+	flag.Parse()
+
+	if handleInfoFlags() {
+		os.Exit(0)
+	}
+
 	appConf, err := config.Load()
 	if err != nil {
 		log.Fatalf("could not load configuration: %s", err)
@@ -16,4 +31,23 @@ func main() {
 	_ = appConf // this is here to ensure no compiler errors once the template is initially stood up
 
 	fmt.Println("This is an empty Go project. Replace this with your app.")
+}
+
+// handleInfoFlags prints version or help output and reports whether it did,
+// so main can exit before loading configuration.
+func handleInfoFlags() bool {
+	if *versionFlag {
+		version.Print()
+		return true
+	}
+
+	if *helpFlag {
+		fmt.Println("Usage: {{APP_NAME}} [flags]")
+		flag.CommandLine.SortFlags = false
+		flag.PrintDefaults()
+		fmt.Println("")
+		return true
+	}
+
+	return false
 }

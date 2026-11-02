@@ -1,7 +1,7 @@
 # Go Basic App Template
 
 > **Maturity Level**: Emerging - the template works end to end, but its layout and setup script may still change
-> **Version**: v0.0.1
+> **Version**: v0.1.0
 >
 > - **Emerging**: Prototype, not production-ready, expect breaking changes
 > - **Basic**: Production-ready but actively evolving, expect minor version changes
