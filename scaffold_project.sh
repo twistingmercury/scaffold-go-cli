@@ -383,8 +383,9 @@ complete_project() {
     return 0
 }
 
-# HOWTO.md, the script, and its tests describe tokens on purpose, so they are
-# not searched.
+# The script and its tests describe tokens on purpose, so they are not searched.
+# The template's README.md mentions tokens too, but rendering README.md.tmpl has
+# already replaced it by now.
 check_for_leftover_tokens() {
     local leftover_tokens
 
@@ -401,7 +402,6 @@ list_leftover_tokens() {
     find "${PROJECT_ROOT}" -type f \
         -not -path "${GIT_DIR_PATH}/*" \
         -not -path "${PROJECT_ROOT}/tests/scaffold/*" \
-        -not -path "${PROJECT_ROOT}/HOWTO.md" \
         -not -path "${SCRIPT_PATH}" \
         -exec grep -nE "${TOKEN_PATTERN}" /dev/null {} +
 }
@@ -485,11 +485,6 @@ init_git_repo() {
 }
 
 remove_setup_files() {
-    if ! rm -f "${PROJECT_ROOT}/HOWTO.md"; then
-        printf "ERROR: could not delete HOWTO.md\n" >&2
-        return 1
-    fi
-
     if ! rm -rf "${PROJECT_ROOT}/tests/scaffold"; then
         printf "ERROR: could not delete tests/scaffold\n" >&2
         return 1
@@ -552,7 +547,7 @@ print_rendered_failure_help() {
     printf "  1. Fix the problem reported above.\n" >&2
     printf "  2. Run: go -C src mod tidy\n" >&2
     printf "  3. Run: make local, then make analyze, then make build\n" >&2
-    printf "  4. Delete HOWTO.md, tests/scaffold, and scaffold_project.sh\n" >&2
+    printf "  4. Delete tests/scaffold and scaffold_project.sh\n" >&2
 
     if [ "${DELETE_GIT_DIR}" = 1 ]; then
         printf "  %s. Delete the .git directory\n" "${step_number}" >&2

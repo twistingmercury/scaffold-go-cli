@@ -162,7 +162,7 @@ assert_rendered_values() {
     assert_fully_rendered
     assert [ -x "${TEST_DIR}/build/build.sh" ]
     assert [ -f "${TEST_DIR}/.bin/local/${APP_NAME}" ]
-    assert [ ! -e "${TEST_DIR}/HOWTO.md" ]
+    assert_file_contains "${TEST_DIR}/README.md" "# ${APP_NAME}"
     assert [ ! -e "${TEST_DIR}/tests/scaffold" ]
     assert [ ! -e "${SCRIPT_PATH}" ]
     assert [ -d "${TEST_DIR}/.git" ]

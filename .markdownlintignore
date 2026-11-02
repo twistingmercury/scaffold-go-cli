@@ -1,7 +1,6 @@
 # Changelogs are not project documentation prose.
 CHANGELOG.md
 CLAUDE.md
-HOWTO.md
 
 # Local tooling state.
 .claude/
