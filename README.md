@@ -1,4 +1,4 @@
-# Go Basic App Template
+# Go CLI App Template
 
 > **Maturity Level**: Emerging - the template works end to end, but its layout and setup script may still change
 > **Version**: v0.1.0
