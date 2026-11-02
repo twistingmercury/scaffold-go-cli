@@ -1,0 +1,19 @@
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"{{GO_MODULE}}/internal/config"
+)
+
+func main() {
+	appConf, err := config.Load()
+	if err != nil {
+		log.Fatalf("could not load configuration: %s", err)
+	}
+
+	_ = appConf // this is here to ensure no compiler errors once the template is initially stood up
+
+	fmt.Println("This is an empty Go project. Replace this with your app.")
+}

@@ -1,0 +1,157 @@
+# Black-box tests
+
+So here's the deal with the tests in this folder. They don't know or care that
+the app is written in Go. They run the compiled binary, the same file a user
+would install, and check what it does from the outside: what it prints, what
+exit code it returns, and what files it creates or changes.
+
+That's the whole idea of black-box testing. The app is a sealed box. You poke
+it, you watch what comes out, and you never peek at the code inside.
+
+## Why bother?
+
+Unit tests (the `*_test.go` files next to the code in `src/`) are great for
+checking small pieces in isolation. But they can all pass while the actual
+binary is broken. Maybe a flag isn't wired up, the config doesn't load, or
+the build left out the version info. Black-box tests catch that stuff,
+because they test the real thing the way a user would run it.
+
+They also hold up well when you refactor. You can rip out half of `src/` and
+rebuild it, and as long as the app still behaves the same, these tests don't
+need to change.
+
+## How it all fits together
+
+When you run `./build/build.sh` (or `make build`), it goes like this:
+
+1. **Build.** `build/Dockerfile` lints and unit-tests the code, then compiles
+   binaries for every platform into `.bin/`.
+2. **Package the tests.** `tests/docker-compose.yaml` builds a test image from
+   `tests/black_box/Dockerfile`. That image gets the Linux binary from `.bin/`
+   and the test files, and nothing from `src/`.
+3. **Run.** The container runs the tests against the binary. The tests find
+   it through the `TARGET_BINARY` environment variable.
+4. **Report.** The container's exit code is the result. Zero means
+   everything passed. Anything else fails the build.
+5. **Clean up.** `build.sh` tears down the test image, container, and network
+   it created, so nothing's left lying around.
+
+## The ground rules
+
+Whatever language you write them in, black-box tests stick to these:
+
+- **Only touch the binary.** Run it from `TARGET_BINARY`. Never import,
+  compile, or read anything from `src/`.
+- **Check from the outside.** Exit codes, stdout and stderr, files written,
+  and anything else you can see without opening the box.
+- **Exit code is the verdict.** Your test runner has to exit non-zero when a
+  test fails. Pretty much all of them do this already.
+- **Keep it self-contained.** Everything the tests need goes into the test
+  image. Don't rely on whatever happens to be installed on the build machine.
+
+## The example in this folder
+
+`tests/black_box/` uses [bats](https://github.com/bats-core/bats-core), which
+is a test framework for shell scripts. There's one test in
+`test-app.bats`. It runs the binary and checks that it exits cleanly and
+prints the empty-project message:
+
+```bash
+@test "{{APP_NAME}} run with no config - prints the empty project message" {
+    run "${TARGET_BINARY}"
+
+    assert_success
+    assert_output "This is an empty Go project. Replace this with your app."
+}
+```
+
+The `assert_*` helpers come from `bats-support` and `bats-assert`, which are
+copied into `tests/black_box/test_helper/` so the tests don't have to download
+anything.
+
+### Why bats and not Go?
+
+This one's on purpose. When the tests are written in the same language as the
+app, it's really tempting to "just import that one helper" from `src/`. Then
+you're not black-box testing anymore. Using a different language makes that
+shortcut impossible.
+
+It's a nudge, not a rule, though. If Go really is the best fit for your
+tests, go for it. Just keep them out of `src/` and follow the ground rules
+above.
+
+### Running them on your machine
+
+You don't need Docker for a quick check. Build the binary, then point bats at
+the folder. The tests use `.bin/local/{{APP_NAME}}` when `TARGET_BINARY` isn't
+set:
+
+```sh
+make local
+bats tests/black_box
+```
+
+You'll need bats installed for that. To run everything exactly the way CI
+does, run `./build/build.sh`.
+
+### Adding a test
+
+Add another `@test` block to `test-app.bats`, or drop a new `*.bats` file
+into `tests/black_box/`. The container runs every `.bats` file in that folder,
+so there's nothing to register.
+
+## Using a different language
+
+Bats is good at "run a command and check what it prints." For other kinds of
+tests, another language might fit better. Say you need to parse JSON output,
+talk to a server the app starts up, or check a complicated file the app
+writes. Swapping languages is pretty painless, because the only connection to
+the rest of the build is the test image and its exit code.
+
+Here's the same test in Python, using only the standard library:
+
+```python
+import os
+import subprocess
+import unittest
+
+TARGET_BINARY = os.environ["TARGET_BINARY"]
+
+
+class TestApp(unittest.TestCase):
+    def test_run_with_no_config_prints_empty_project_message(self):
+        result = subprocess.run([TARGET_BINARY], capture_output=True, text=True)
+
+        self.assertEqual(result.returncode, 0)
+        output = result.stdout + result.stderr
+        self.assertEqual(output.strip(), "This is an empty Go project. Replace this with your app.")
+
+
+if __name__ == "__main__":
+    unittest.main()
+```
+
+To make the switch:
+
+1. Put your tests in `tests/black_box/`, or in a new folder. If you use a new
+   folder, update the `dockerfile:` path in `tests/docker-compose.yaml` and
+   the `!tests/black_box` line in the root `.dockerignore`.
+2. In the test Dockerfile, change the `FROM` line to an image for your
+   language, for example a Python image. Pin it to a version and digest like
+   the bats one.
+3. Change the `CMD` to run your test runner, for example
+   `CMD ["python", "-m", "unittest", "-v"]`. Base images like Python's don't
+   have a test runner as their entrypoint the way the bats image does, so you
+   need the full command here.
+4. Keep the `COPY` line for the binary and the `ENV TARGET_BINARY=...` line
+   as they are. That's the contract.
+
+That's it. `build.sh` doesn't care what language is inside the container. It
+only looks at the exit code.
+
+## Heads-up
+
+- The test image copies the `amd64` Linux binary by default. If you're on an
+  arm64 machine, like an Apple Silicon Mac, add `args: { GOARCH: arm64 }`
+  under `build:` in `tests/docker-compose.yaml` so the binary matches the
+  container.

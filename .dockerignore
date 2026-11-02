@@ -1,5 +1,5 @@
 # Build context is the repo root. Ignore everything, then admit only what the
-# service Dockerfiles in build/<name>/ COPY.
+# Dockerfiles in build/ and tests/ COPY.
 *
 
 !LICENSE
@@ -8,3 +8,7 @@
 !src/.golangci.yaml
 !src/cmd
 !src/internal
+
+# Black-box tests: the compiled binary and the test files.
+!.bin/*/linux
+!tests/black_box

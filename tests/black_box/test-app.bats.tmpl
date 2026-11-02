@@ -1,0 +1,14 @@
+#!/usr/bin/env bats
+
+load 'test_helper/bats-support/load'
+load 'test_helper/bats-assert/load'
+
+# The test image sets TARGET_BINARY; the default runs against `make local` output.
+TARGET_BINARY="${TARGET_BINARY:-${BATS_TEST_DIRNAME}/../../.bin/local/{{APP_NAME}}}"
+
+@test "{{APP_NAME}} run with no config - prints the empty project message" {
+    run "${TARGET_BINARY}"
+
+    assert_success
+    assert_output "This is an empty Go project. Replace this with your app."
+}

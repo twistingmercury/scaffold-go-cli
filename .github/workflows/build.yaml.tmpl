@@ -1,0 +1,38 @@
+name: CI
+
+# A change that only touches docs or editor/linter config can't affect the build, so skip CI for it.
+on:
+  push:
+    branches:
+      - develop
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.markdownlint.json'
+      - '.markdownlintignore'
+      - '.shellcheckrc'
+  pull_request:
+    branches:
+      - develop
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+      - '.markdownlint.json'
+      - '.markdownlintignore'
+      - '.shellcheckrc'
+
+jobs:
+  build:
+    name: Docker Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0  # Full history for version metadata
+
+      - name: Run Docker-first build
+        run: ./build/build.sh

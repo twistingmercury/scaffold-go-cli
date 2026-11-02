@@ -4,13 +4,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJ_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-APP_NAME="${APP_NAME:-scaffold}"
+APP_NAME="${APP_NAME:-{{APP_NAME}}}"
 # Read from go.mod with awk because the CI runner has no Go toolchain installed.
 MODULE_NAME="${MODULE_NAME:-$(awk '/^module /{print $2}' "${PROJ_ROOT}/src/go.mod")}"
 
 IMAGE_NAME="${IMAGE_NAME:-${APP_NAME}_docker_image}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 OUTPUT_DIR="${OUTPUT_DIR:-${PROJ_ROOT}/.bin}"
+
+COMPOSE_FILE="${PROJ_ROOT}/tests/docker-compose.yaml"
+# The PID suffix keeps parallel runs on one machine from sharing compose resources.
+COMPOSE_PROJECT="${COMPOSE_PROJECT:-${APP_NAME}-black-box-$$}"
 
 BUILD_VER="${BUILD_VER:-$(git -C "${PROJ_ROOT}" describe --tags --abbrev=0 2>/dev/null || echo 'dev')}"
 BUILD_DATE="${BUILD_DATE:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}"
@@ -33,12 +37,12 @@ build() {
     printf "done\n"
 }
 
-e2e_tests() {
-    printf "starting end-to-end tests..."
+black_box_tests() {
     local rc=0
-    run_quiet docker compose --progress=plain -f "${PROJ_ROOT}/tests/docker-compose.yaml" build
-    docker compose -f "${PROJ_ROOT}/tests/docker-compose.yaml" up --remove-orphans --exit-code-from tests || rc=$?
-    docker compose -f "${PROJ_ROOT}/tests/docker-compose.yaml" down --remove-orphans >/dev/null 2>&1 || true
+    printf "starting black-box tests..."
+    docker compose --progress=plain -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" build --no-cache --pull
+    docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" up --remove-orphans --exit-code-from tests || rc=$?
+    docker compose -p "${COMPOSE_PROJECT}" -f "${COMPOSE_FILE}" down -v --remove-orphans --rmi local >/dev/null 2>&1 || true
 
     if [ "${rc}" -ne 0 ]; then
         printf "failed\n"
@@ -51,7 +55,7 @@ e2e_tests() {
 
 main() {
     build
-    # e2e_tests
+    black_box_tests
 }
 
 main "$@"
