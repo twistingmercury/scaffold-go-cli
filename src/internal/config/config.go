@@ -1,0 +1,66 @@
+package config
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/spf13/viper"
+)
+
+const (
+	EnvPrefix     = "SCAFFOLD"
+	EnvConfigFile = "SCAFFOLD_CONFIG_FILE"
+)
+
+type AppConfig struct {
+	// TODO: implement application config fields
+}
+
+func Load() (*AppConfig, error) {
+	v, err := Resolve()
+	if err != nil {
+		return nil, err
+	}
+
+	cfg := &AppConfig{}
+	if err := v.Unmarshal(cfg); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
+	}
+
+	if errs := cfg.Validate(); len(errs) > 0 {
+		return nil, fmt.Errorf("configuration validation failed:\n%w", errors.Join(errs...))
+	}
+
+	return cfg, nil
+}
+
+func Resolve() (*viper.Viper, error) {
+	v := viper.New()
+	SetDefaults(v)
+
+	v.SetEnvPrefix(EnvPrefix)
+	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
+	v.AutomaticEnv()
+
+	return v, nil
+}
+
+func SetDefaults(v *viper.Viper) {
+	// TODO: establish any required default values for the AppConfig
+}
+
+// Validate validates the configuration and returns one error per invalid key.
+func (c *AppConfig) Validate() []error {
+	var errs []error
+	check := func(bad bool, field, message string) {
+		if bad {
+			errs = append(errs, errors.New(field+": "+message))
+		}
+	}
+
+	check(1 == 0, "example", "this is an example of using check")
+
+	// TODO: add checks as needed to verify the configuration
+	return errs
+}

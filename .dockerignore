@@ -1,0 +1,10 @@
+# Build context is the repo root. Ignore everything, then admit only what the
+# service Dockerfiles in build/<name>/ COPY.
+*
+
+!LICENSE
+!src/go.mod
+!src/go.sum
+!src/.golangci.yaml
+!src/cmd
+!src/internal

@@ -1,0 +1,41 @@
+.PHONY: help local build install uninstall test analyze
+
+GIT_COMMIT := $(shell git rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
+GIT_TAG := $(shell git describe --tags --abbrev=0 2>/dev/null || echo "dev")
+BUILD_DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
+GOBIN := ${HOME}/go/bin
+APP_NAME := scaffold
+GO_MODULE := $(shell go -C src list -m)
+
+GOOS :=  $(shell go env GOOS)
+GOARCH := $(shell go env GOARCH)
+
+LOCAL_BUILD := $(CURDIR)/.bin/local
+
+help: ## Show this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\n\033[1mAvailable targets:\033[0m\n"} /^[a-zA-Z0-9_-]+:.*##/ { printf "  %-12s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
+	@echo ""
+
+local: ## Performs only a local build of the app
+	@go -C src build \
+	--ldflags="-X '${GO_MODULE}/internal/version.version=${GIT_TAG}' -X '${GO_MODULE}/internal/version.buildDate=${BUILD_DATE}' -X '${GO_MODULE}/internal/version.gitCommit=${GIT_COMMIT}'" \
+	-o ${LOCAL_BUILD}/${APP_NAME} \
+	./cmd/main.go
+
+build: ## Performs a full build of the app (Docker-based; use `make local` for a quick local binary)
+	@./build/build.sh
+
+install: local uninstall ## Install the app to $GOBIN
+	@cp ${LOCAL_BUILD}/${APP_NAME} ${GOBIN}/${APP_NAME}
+
+uninstall: ## Uninstall from $GOBIN
+	@rm -f ${GOBIN}/${APP_NAME}
+
+test: ## Runs unit tests (cmd and internal packages)
+	go -C src test ./cmd/... ./internal/...
+
+analyze: ## Run linters, formatters, security scanners on production code (no tests/ or *_test.go)
+	@goimports -w src/cmd src/internal
+	@cd src && golangci-lint run --tests=false ./...
+	@cd src && govulncheck ./cmd/... ./internal/...
+	@cd src && gosec -quiet ./...

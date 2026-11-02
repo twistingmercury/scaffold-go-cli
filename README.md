@@ -1,0 +1,12 @@
+# App
+
+> **Maturity Level**: Emerging - an empty project scaffold to be fleshed out  
+> **Version**: v0.12.0
+>
+> - **Emerging**: Prototype, not production-ready, expect breaking changes
+> - **Basic**: Production-ready but actively evolving, expect minor version changes
+> - **Mature**: Stable, battle-tested, changes are rare
+
+---
+
+## Table of Contents

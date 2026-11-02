@@ -1,0 +1,11 @@
+# Licence text and changelogs are not project documentation prose.
+LICENSE.md
+CHANGELOG.md
+CLAUDE.md
+HOWTO.md
+
+# Local tooling state.
+.claude/
+
+# Vendored BATS helper libraries (third-party docs).
+tests/bats
